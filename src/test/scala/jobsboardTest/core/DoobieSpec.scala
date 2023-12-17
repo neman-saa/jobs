@@ -34,5 +34,4 @@ trait DoobieSpec {
       ce
     )
   } yield xa
-
 }

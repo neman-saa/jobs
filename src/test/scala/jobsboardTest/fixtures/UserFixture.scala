@@ -17,7 +17,7 @@ trait UserFixture {
     override def delete(email: String): IO[Boolean]   = IO.pure(true)
   }
 
-  val Daniel = User(
+  val Daniel: User = User(
     "daniel@rockthejvm.com",
     "$2a$10$U3vSFVJuAClZXDtr3A7c/ed0ybdlpSomVUv/ngCR8G45cSwDU.5ti",
     Some("Daniel"),
@@ -25,10 +25,10 @@ trait UserFixture {
     Some("Rock the JVM"),
     Role.ADMIN
   )
-  val danielEmail    = Daniel.email
+  val danielEmail: String = Daniel.email
   val danielPassword = "rockthejvm"
 
-  val Riccardo = User(
+  val Riccardo: User = User(
     "riccardo@rockthejvm.com",
     "$2a$10$jDPXCNCHkbZLzmiTRuw9A.gBHRDQ1iKnYONCBuskyOln8Aa8eucFa",
     Some("Riccardo"),
@@ -36,10 +36,10 @@ trait UserFixture {
     Some("Rock the JVM"),
     Role.RECRUITER
   )
-  val riccardoEmail    = Riccardo.email
+  val riccardoEmail: String = Riccardo.email
   val riccardoPassword = "riccardorulez"
 
-  val NewUser = User(
+  val NewUser: User = User(
     "newuser@gmail.com",
     "$2a$10$6LQt4xy4LzqQihZiRZGG0eeeDwDCvyvthICXzPKQDQA3C47LtrQFy",
     Some("John"),
@@ -48,7 +48,7 @@ trait UserFixture {
     Role.RECRUITER
   )
 
-  val UpdatedRiccardo = User(
+  val UpdatedRiccardo: User = User(
     "riccardo@rockthejvm.com",
     "$2a$10$PUD6CznGVHntJFsOOeV4NezBgBUs6irV3sC9fa6ufc0xp9VLYyHZ.",
     Some("RICCARDO"),
@@ -57,9 +57,9 @@ trait UserFixture {
     Role.RECRUITER
   )
 
-  val newUserDaniel = NewUserInfo(
+  val newUserDaniel: NewUserInfo = NewUserInfo(
     danielEmail, danielPassword, Daniel.firstName, Daniel.lastName, Daniel.company
   )
-  val newUserRiccardo = NewUserInfo(
+  val newUserRiccardo: NewUserInfo = NewUserInfo(
     riccardoEmail, riccardoPassword, Riccardo.firstName, None, None)
 }

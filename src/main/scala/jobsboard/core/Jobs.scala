@@ -216,5 +216,5 @@ object LiveJobs {
     )
   }
 
-  def apply[F[_]: Concurrent: Logger](xa: Transactor[F]): F[LiveJobs[F]] = (new LiveJobs[F](xa)).pure[F]
+  def apply[F[_]: Concurrent: Logger](xa: Transactor[F]): F[LiveJobs[F]] = new LiveJobs[F](xa).pure[F]
 }

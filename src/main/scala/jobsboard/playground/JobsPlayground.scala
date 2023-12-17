@@ -35,19 +35,20 @@ object JobsPlayground extends IOApp.Simple {
     remote = false,
     location = "NYC"
   )
-  override def run = postgresResource.use { xa => for {
-    jobs <- LiveJobs[IO](xa)
-    _ <- IO.println("Ready. Next...") *> IO.readLine
-    id <- jobs.create("google@gmail.com", jobInfo)
-    - <- IO.println("Next...") *> IO.readLine
-    list <- jobs.all()
-    _ <- IO.println(s"All jobs: $list, Next...") *> IO.readLine
-    _ <- jobs.update(id, jobInfo.copy(title = "Software rockstar"))
-    newJob <- jobs.find(id)
-    _ <- IO.println(s"New job: $newJob, Next...") *> IO.readLine
-    _ <- jobs.delete(id)
-    listAfter <- jobs.all()
-    _ <- IO.println(s"Now list should be empty: $listAfter")
-  } yield ()
+  override def run = postgresResource.use { xa =>
+    for {
+      jobs      <- LiveJobs[IO](xa)
+      _         <- IO.println("Ready. Next...") *> IO.readLine
+      id        <- jobs.create("google@gmail.com", jobInfo)
+      -         <- IO.println("Next...") *> IO.readLine
+      list      <- jobs.all()
+      _         <- IO.println(s"All jobs: $list, Next...") *> IO.readLine
+      _         <- jobs.update(id, jobInfo.copy(title = "Software rockstar"))
+      newJob    <- jobs.find(id)
+      _         <- IO.println(s"New job: $newJob, Next...") *> IO.readLine
+      _         <- jobs.delete(id)
+      listAfter <- jobs.all()
+      _         <- IO.println(s"Now list should be empty: $listAfter")
+    } yield ()
   }
 }

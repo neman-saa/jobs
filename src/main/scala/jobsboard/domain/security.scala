@@ -12,7 +12,7 @@ object security {
   type JwtToken            = AugmentedJWT[HMACSHA256, String]
   type Authenticator[F[_]] = JWTAuthenticator[F, String, User, HMACSHA256]
   type AuthRoute[F[_]]     = PartialFunction[SecuredRequest[F, User, JwtToken], F[Response[F]]]
-  type AuthRBAC[F[_]]      = BasicRBAC[F, Role, User, JwtToken]
+  private type AuthRBAC[F[_]]      = BasicRBAC[F, Role, User, JwtToken]
 
   given authRole[F[_]: MonadThrow]: AuthorizationInfo[F, Role, User] with {
     override def fetchInfo(u: User): F[Role] = u.role.pure[F]
@@ -26,7 +26,7 @@ object security {
 
   case class Authorizations[F[_]](rbacRoutes: Map[AuthRBAC[F], List[AuthRoute[F]]])
 
-  object Authorizations {
+  private object Authorizations {
     given combiner[F[_]]: Semigroup[Authorizations[F]] = Semigroup.instance(
       (authA, authB) => Authorizations(authA.rbacRoutes |+| authB.rbacRoutes))
   }

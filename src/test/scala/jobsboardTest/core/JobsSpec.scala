@@ -17,7 +17,7 @@ class JobsSpec
     with JobFixture
     with DoobieSpec {
   override val initScript: String = "sql/jobs.sql"
-  given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
+  given logger: Logger[IO]        = Slf4jLogger.getLogger[IO]
 
   "Jobs algebra" - {
     "should only return a job if it exists" in {
@@ -54,20 +54,20 @@ class JobsSpec
     "should delete job by id" in {
       transactor.use(xa => {
         val program = for {
-          jobs <- LiveJobs[IO](xa)
+          jobs              <- LiveJobs[IO](xa)
           retrievedDeleting <- jobs.delete(AwesomeJobUuid)
-          retrievedFinding <- jobs.find(AwesomeJobUuid)
+          retrievedFinding  <- jobs.find(AwesomeJobUuid)
         } yield (retrievedDeleting, retrievedFinding)
 
         program.asserting((del, find) => (del, find) shouldBe (1, None))
       })
     }
     "should create a job" in {
-      transactor.use (xa => {
+      transactor.use(xa => {
         val program = for {
-          jobs <- LiveJobs[IO](xa)
+          jobs            <- LiveJobs[IO](xa)
           retrievedCreate <- jobs.create("No email", AnotherAwesomeJob.jobInfo)
-          retrieved <- jobs.find(retrievedCreate)
+          retrieved       <- jobs.find(retrievedCreate)
         } yield retrieved
         program.asserting(_.map(_.jobInfo) shouldBe Some(AnotherAwesomeJob.jobInfo))
       })
@@ -75,7 +75,7 @@ class JobsSpec
     "should filter remote jobs" in {
       transactor.use(xa => {
         val program = for {
-          jobs <- LiveJobs[IO](xa)
+          jobs         <- LiveJobs[IO](xa)
           filteredJobs <- jobs.all(JobFilter(remote = true), Pagination.default)
         } yield filteredJobs
         program.asserting(_ shouldBe List())
@@ -85,7 +85,10 @@ class JobsSpec
       transactor.use(xa => {
         val program = for {
           jobs <- LiveJobs[IO](xa)
-          filteredJobs <- jobs.all(JobFilter(tags = List("scala", "cats", "zio")), Pagination.default)
+          filteredJobs <- jobs.all(
+            JobFilter(tags = List("scala", "cats", "zio")),
+            Pagination.default
+          )
         } yield filteredJobs
         program.asserting(_ shouldBe List(AwesomeJob))
       })

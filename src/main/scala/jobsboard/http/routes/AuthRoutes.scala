@@ -9,7 +9,7 @@ import org.http4s.{HttpRoutes, Response, Status}
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
 import cats.implicits.*
-import jobsboard.domain.auth.{LoginInfo, NewPasswordInfo}
+import jobsboard.domain.auth.{ForgotPasswordInfo, LoginInfo, NewPasswordInfo, RecoverPasswordInfo}
 import jobsboard.domain.security.*
 import jobsboard.domain.user.{NewUserInfo, User}
 import jobsboard.http.responses.FailureResponse
@@ -34,35 +34,49 @@ class AuthRoutes[F[_]: Concurrent: Logger](auth: Auth[F]) extends HttpValidation
     }
   }
 
-  private val signUpRoute: HttpRoutes[F] = HttpRoutes.of[F] { case req@POST -> Root / "users" =>
-    req.validate[NewUserInfo]{newUserInfo =>
+  private val signUpRoute: HttpRoutes[F] = HttpRoutes.of[F] { case req @ POST -> Root / "users" =>
+    req.validate[NewUserInfo] { newUserInfo =>
       for {
         maybeNewUser <- auth.signUp(newUserInfo)
         response <- maybeNewUser match {
           case Some(user) => Created(user.email)
-          case None => BadRequest("User with this email already exists")
+          case None       => BadRequest("User with this email already exists")
         }
       } yield response
     }
+  }
 
+  private val forgotPasswordRoute: HttpRoutes[F] = HttpRoutes.of[F] {
+    case req@ POST -> Root / "reset" => for {
+      fpInfo <- req.as[ForgotPasswordInfo]
+      _ <- auth.sendPasswordRecoveryToken(fpInfo.email)
+      response <- Ok()
+    } yield response
+  }
+
+  private val recoverPasswordRoute: HttpRoutes[F] = HttpRoutes.of[F] {
+    case req@POST -> Root / "recover" => for {
+      recoverPassInfo <- req.as[RecoverPasswordInfo]
+      recovery <- auth.recoverPasswordFromToken(recoverPassInfo.email, recoverPassInfo.token, recoverPassInfo.newPassword)
+      resp <- if (recovery) Ok() else Forbidden(FailureResponse("Email or token is incorrect"))
+    } yield resp
   }
 
   private val passwordResetRoute: AuthRoute[F] = {
-    case req@POST -> Root / "users" / "password" asAuthed user =>
-      req.request.validate[NewPasswordInfo]{ newPasswordInfo =>
+    case req @ POST -> Root / "users" / "password" asAuthed user =>
+      req.request.validate[NewPasswordInfo] { newPasswordInfo =>
         for {
           maybeUserOrError <- auth.changePassword(user.email, newPasswordInfo)
           resp <- maybeUserOrError match {
             case Right(Some(_)) => Ok()
-            case Right(None) => NotFound(FailureResponse(s"User email ${user.email} not found"))
-            case Left(e) => Forbidden()
+            case Right(None)    => NotFound(FailureResponse(s"User email ${user.email} not found"))
+            case Left(e)        => Forbidden()
           }
         } yield resp
-     }
+      }
   }
 
-  private val logoutRoute: AuthRoute[F] = { 
-    case req@POST -> Root / "logout" asAuthed _ =>
+  private val logoutRoute: AuthRoute[F] = { case req @ POST -> Root / "logout" asAuthed _ =>
     val token = req.authenticator
     for {
       _    <- authenticator.discard(token)
@@ -71,20 +85,21 @@ class AuthRoutes[F[_]: Concurrent: Logger](auth: Auth[F]) extends HttpValidation
   }
 
   private val deleteUser: AuthRoute[F] = {
-    case req@DELETE -> Root / "users" / email asAuthed user => {
+    case req @ DELETE -> Root / "users" / email asAuthed user =>
       auth.delete(email).flatMap {
-        case true => Ok()
+        case true  => Ok()
         case false => NotFound()
       }
-    }
   }
 
-  private val unAuthedRoutes = loginRoute <+> signUpRoute
+
+  private val unAuthedRoutes = loginRoute <+> signUpRoute <+> forgotPasswordRoute <+> recoverPasswordRoute
   private val authedRoutes =
     securedHandler.liftService(
       logoutRoute.restrictedTo(allRoles) |+|
-      deleteUser.restrictedTo(adminOnly) |+|
-      passwordResetRoute.restrictedTo(allRoles))
+        deleteUser.restrictedTo(adminOnly) |+|
+        passwordResetRoute.restrictedTo(allRoles)
+    )
   val allRoutes: HttpRoutes[F] = Router(
     "/auth" -> (unAuthedRoutes <+> authedRoutes)
   )

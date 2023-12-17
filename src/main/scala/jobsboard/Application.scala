@@ -8,6 +8,7 @@ import org.http4s.dsl.impl.*
 import cats.*
 import cats.effect.IO
 import cats.effect.IOApp
+import doobie.util.transactor.Transactor
 import jobsboard.configuration.{AppConfig, EmberConfig}
 import jobsboard.modules.{Core, Database, HttpApi}
 import pureconfig.ConfigReader.Result
@@ -24,10 +25,10 @@ object Application extends IOApp.Simple {
 
   given logger: Logger[IO] = Slf4jLogger.getLogger[IO]
   override def run: IO[Unit] = ConfigSource.default.loadF[IO, AppConfig].flatMap {
-    case AppConfig(emberConfig, postgresConfig, securityConfig) => {
+    case AppConfig(emberConfig, postgresConfig, securityConfig, tokenConfig, emailServiceConfig) =>
       val appResource = for {
-        xa <- Database.postgresResource[IO](postgresConfig)
-        core <- Core[IO](xa)(securityConfig)
+        xa: Transactor[IO] <- Database.postgresResource[IO](postgresConfig)
+        core <- Core[IO](xa)(securityConfig, tokenConfig, emailServiceConfig)
         httpApi <- HttpApi[IO](core)
         server <- EmberServerBuilder
           .default[IO]
@@ -37,6 +38,5 @@ object Application extends IOApp.Simple {
           .build
       } yield server
       appResource.use(_ => IO.println("Server started") *> IO.never)
-    }
   }
 }

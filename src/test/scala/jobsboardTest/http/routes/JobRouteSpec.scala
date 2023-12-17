@@ -36,7 +36,8 @@ class JobRouteSpec
 
     override def all(): IO[List[Job]] = IO.pure(List(AwesomeJob))
 
-    override def all(filter: JobFilter, pagination: Pagination): IO[List[Job]] = IO.pure(List(AwesomeJob))
+    override def all(filter: JobFilter, pagination: Pagination): IO[List[Job]] =
+      IO.pure(List(AwesomeJob))
     override def find(id: UUID): IO[Option[Job]] = {
       if (id == AwesomeJob.id) IO.pure(Some(AwesomeJob))
       else IO.pure(none)
@@ -99,10 +100,12 @@ class JobRouteSpec
         responseOk <- jobRoute.orNotFound.run(
           Request[IO](method = Method.PUT, uri = uri"/jobs/843df718-ec6e-4d49-9289-f799c0f40064")
             .withEntity(UpdatedAwesomeJob.jobInfo)
-            .withBearerToken(jwtToken))
+            .withBearerToken(jwtToken)
+        )
         responseInvalidNoToken <- jobRoute.orNotFound.run(
           Request(method = Method.PUT, uri = uri"/jobs/843df718-ec6e-4d49-9289-f799c0f40064")
-            .withEntity(UpdatedAwesomeJob.jobInfo))
+            .withEntity(UpdatedAwesomeJob.jobInfo)
+        )
         responseInvalidNotFound <- jobRoute.orNotFound.run(
           Request[IO](method = Method.PUT, uri = uri"/jobs/843df718-ec6e-4d49-9289-f799c0f40000")
             .withEntity(UpdatedAwesomeJob.jobInfo)
@@ -120,7 +123,8 @@ class JobRouteSpec
         jwtToken <- mockedAuthenticator.create(danielEmail)
         responseOk <- jobRoute.orNotFound.run(
           Request[IO](method = Method.DELETE, uri = uri"/jobs/843df718-ec6e-4d49-9289-f799c0f40064")
-            .withBearerToken(jwtToken))
+            .withBearerToken(jwtToken)
+        )
         responseInvalid <- jobRoute.orNotFound.run(
           Request[IO](method = Method.DELETE, uri = uri"/jobs/843df718-ec6e-4d49-9289-f799c0f40000")
             .withEntity(UpdatedAwesomeJob.jobInfo)

@@ -24,9 +24,11 @@ trait Auth[F[_]] {
   def changePassword(email: String, newPasswordInfo: NewPasswordInfo): F[Either[String, Option[User]]]
   def authenticator: Authenticator[F]
   def delete(email: String): F[Boolean]
+  def sendPasswordRecoveryToken(email: String): F[Unit]
+  def recoverPasswordFromToken(email: String, token: String, newPassword: String): F[Boolean]
 }
 
-class LiveAuth[F[_]: Async: Logger](users: Users[F], authenticatorr: Authenticator[F]) extends Auth[F] {
+class LiveAuth[F[_]: Async: Logger](users: Users[F], authenticatorr: Authenticator[F], tokens: Tokens[F], emails: Emails[F]) extends Auth[F] {
   override def authenticator: Authenticator[F] = authenticatorr
   override def login(email: String, password: String): F[Option[JwtToken]] = for {
     maybeUser <- users.find(email)
@@ -60,11 +62,31 @@ class LiveAuth[F[_]: Async: Logger](users: Users[F], authenticatorr: Authenticat
       } yield result
     }
   override def delete(email: String): F[Boolean] = users.delete(email)
+
+  override def sendPasswordRecoveryToken(email: String): F[Unit] =
+    tokens.getToken(email).flatMap {
+      case Some(token) => emails.sendPasswordRecoveryEmail(email, token)
+      case None => ().pure[F]
+    }
+
+  override def recoverPasswordFromToken(email: String, token: String, newPassword: String): F[Boolean] = for {
+    maybeUser <- users.find(email)
+    tokenIsValid <- tokens.checkToken(email, token)
+    result <- (maybeUser, tokenIsValid) match {
+      case (Some(user), true) => updateUser(user, newPassword).map(_.nonEmpty)
+      case _ => false.pure[F]
+    }
+  } yield result
+
+  private def updateUser(user: User, newPassword: String): F[Option[User]] = for {
+    hashedPassword <- BCrypt.hashpw[F](newPassword)
+    updateUser <- users.update(user.copy(hashedPassword = hashedPassword))
+  } yield updateUser
 }
 
 
-object LiveAuth{
-  def apply[F[_]: Async: Logger](users: Users[F])(securityConfig: SecurityConfig) = {
+object LiveAuth {
+  def apply[F[_]: Async: Logger](users: Users[F], tokens: Tokens[F], emails: Emails[F])(securityConfig: SecurityConfig): F[LiveAuth[F]] = {
     val keyF = HMACSHA256.buildKey[F](securityConfig.secret.getBytes("UTF-8"))
     val idStore: IdentityStore[F, String, User] =
       (email: String) => OptionT(users.find(email))
@@ -86,7 +108,7 @@ object LiveAuth{
       tokenStore = tokenStore,
       signingKey = key)
 
-    authenticatorF.map(authenticator => new LiveAuth[F](users, authenticator))
+    authenticatorF.map(authenticator => new LiveAuth[F](users, authenticator, tokens, emails))
   }
 }
 

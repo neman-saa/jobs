@@ -68,6 +68,10 @@ class AuthRouteSpec
     override def delete(email: String): IO[Boolean] =
       if (email == danielEmail) IO.pure(true)
       else IO.pure(false)
+
+    override def recoverPasswordFromToken(email: String, token: String, newPassword: String): IO[Boolean] = ???
+
+    override def sendPasswordRecoveryToken(email: String): IO[Unit] = ???
   }
 
   given logger: Logger[IO] = Slf4jLogger.getLogger
@@ -88,7 +92,7 @@ class AuthRouteSpec
     "should give token if login data is correct" in {
       for {
         goodResponse <- allRoutes.orNotFound.run(Request(
-          method = Method.POST, uri = uri"auth/login")/////////////////////////////////////////////////////////////////////////////
+          method = Method.POST, uri = uri"auth/login")
           .withEntity(LoginInfo(danielEmail, danielPassword)))
       } yield {
         goodResponse.status shouldBe Status.Ok
@@ -98,7 +102,7 @@ class AuthRouteSpec
     "should return Status.BadRequest if users email exists" in {
       for {
         badResponse <- allRoutes.orNotFound.run(Request(
-          method = Method.POST, uri = uri"auth/users")/////////////////////////////////////////////////////////////////////////////
+          method = Method.POST, uri = uri"auth/users")
           .withEntity(NewUserInfo(Daniel.email, danielPassword, None, None, None)))
       } yield {
         badResponse.status shouldBe Status.BadRequest
@@ -109,7 +113,7 @@ class AuthRouteSpec
       for {
         goodResponse <- allRoutes.orNotFound.run(Request(
           method = Method.POST, uri = uri"auth/users")
-          .withEntity(NewUserInfo("newuser@gmail.com", "newuserpassword", None, None, None))) ////////////////////////////////////////////////////////////
+          .withEntity(NewUserInfo("newuser@gmail.com", "newuserpassword", None, None, None)))
       } yield {
         goodResponse.status shouldBe Status.Created
       }

@@ -29,7 +29,6 @@ trait SecuredRouteFixture extends UserFixture {
       key
     )
   }
-
   extension (request: Request[IO])
     def withBearerToken(a: JwtToken): Request[IO] = request.putHeaders {
       val jwtString = JWTMac.toEncodedString[IO, HMACSHA256](a.jwt)

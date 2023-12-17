@@ -67,5 +67,5 @@ final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends
 }
 
 object LiveUsers {
-  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) = (new LiveUsers[F](xa)).pure[F]
+  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]): F[LiveUsers[F]] = new LiveUsers[F](xa).pure[F]
 }

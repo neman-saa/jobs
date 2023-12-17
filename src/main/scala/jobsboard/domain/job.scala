@@ -5,38 +5,41 @@ import java.util.UUID
 object job {
 
   case class Job(
-    id: UUID,
-    date: Long,
-    ownerEmail: String,
-    active: Boolean = false,
+      id: UUID,
+      date: Long,
+      ownerEmail: String,
+      active: Boolean = false,
       jobInfo: JobInfo
-    )
+  )
 
   case class JobInfo(
-    company: String,
-    title: String,
-    description: String,
-    externalUrl: String,
-    remote: Boolean,
-    location: String,
-    salaryLo: Option[Int],
-    salaryHi: Option[Int],
-    currency: Option[String],
-    country: Option[String],
-    image: Option[String],
-    tags: Option[List[String]],
-    seniority: Option[String],
-    other: Option[String]
-    )
+      company: String,
+      title: String,
+      description: String,
+      externalUrl: String,
+      remote: Boolean,
+      location: String,
+      salaryLo: Option[Int],
+      salaryHi: Option[Int],
+      currency: Option[String],
+      country: Option[String],
+      image: Option[String],
+      tags: Option[List[String]],
+      seniority: Option[String],
+      other: Option[String]
+  )
 
   object JobInfo {
-    val empty: JobInfo = JobInfo("", "", "", "", false, "", None, None, None, None, None, None, None, None)
-    def minimal(company: String,
-                title: String,
-                description: String,
-                externalUrl: String,
-                remote: Boolean,
-                location: String): JobInfo =
+    val empty: JobInfo =
+      JobInfo("", "", "", "", false, "", None, None, None, None, None, None, None, None)
+    def minimal(
+        company: String,
+        title: String,
+        description: String,
+        externalUrl: String,
+        remote: Boolean,
+        location: String
+    ): JobInfo =
       JobInfo(
         company = company,
         title = title,
@@ -63,5 +66,5 @@ object job {
       tags: List[String] = Nil,
       maxSalary: Option[Int] = None,
       remote: Boolean = false
-                            )
+  )
 }

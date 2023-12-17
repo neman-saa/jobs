@@ -14,7 +14,7 @@ object user {
       role: Role) {
     def owns(job: Job): Boolean = email == job.ownerEmail
     def isAdmin: Boolean = role == Role.ADMIN
-    def isRecruiter = role == Role.RECRUITER
+    def isRecruiter: Boolean = role == Role.RECRUITER
   }
 
   final case class NewUserInfo(email: String, password: String, firstName: Option[String], secondName: Option[String], company: Option[String])

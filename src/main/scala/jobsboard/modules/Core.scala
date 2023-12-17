@@ -8,21 +8,24 @@ import doobie.util.*
 import doobie.hikari.HikariTransactor
 import cats.effect.Async
 import cats.implicits.*
-import jobsboard.configuration.SecurityConfig
+import jobsboard.configuration.{EmailServiceConfig, SecurityConfig, TokenConfig}
 import jobsboard.core.{Jobs, LiveJobs}
 import org.typelevel.log4cats.Logger
 
-final class Core[F[_]](val jobs: Jobs[F])(val auth: Auth[F]) {
-}
+final class Core[F[_]](val jobs: Jobs[F])(val auth: Auth[F]) {}
 
 object Core {
 
-  def apply[F[_]: Async: Logger](xa: Transactor[F])(securityConfig: SecurityConfig): Resource[F, Core[F]] = {
+  def apply[F[_]: Async: Logger](
+      xa: Transactor[F]
+  )(securityConfig: SecurityConfig, tokenConfig: TokenConfig, emailServiceConfig: EmailServiceConfig): Resource[F, Core[F]] = {
 
     val coreF = for {
-      jobs <- LiveJobs[F](xa)
+      jobs  <- LiveJobs[F](xa)
       users <- LiveUsers[F](xa)
-      auth <- LiveAuth[F](users)(securityConfig)
+      tokens <- LiveTokens[F](users)(xa, tokenConfig)
+      emails <- LiveEmails[F](emailServiceConfig)
+      auth  <- LiveAuth[F](users, tokens, emails)(securityConfig)
     } yield new Core(jobs)(auth)
 
     Resource.eval(coreF)

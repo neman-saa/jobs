@@ -17,7 +17,6 @@ object EmberConfig {
         Right(host)
     }
   }
-
   given portReader: ConfigReader[Port] = ConfigReader[Int].emap { port =>
     Port.fromInt(port) match {
       case None =>
