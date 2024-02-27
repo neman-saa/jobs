@@ -41,9 +41,9 @@ image: Option[String],
 tags: Option[List[String]],
 seniority: Option[String],
 other: Option[String]
-*/
+ */
 private class LiveJobs[F[_]: Concurrent: Logger](xa: Transactor[F]) extends Jobs[F] {
-  override  def create(ownerEmail: String, jobsInfo: JobInfo): F[UUID] =
+  override def create(ownerEmail: String, jobsInfo: JobInfo): F[UUID] =
     sql"""
     INSERT INTO jobs(
     date,
@@ -81,11 +81,10 @@ private class LiveJobs[F[_]: Concurrent: Logger](xa: Transactor[F]) extends Jobs
        ${jobsInfo.tags},
        ${jobsInfo.seniority},
        ${jobsInfo.other}
-       )"""
-      .update
+       )""".update
       .withUniqueGeneratedKeys[UUID]("id")
       .transact(xa)
-  override  def all(): F[List[Job]] =
+  override def all(): F[List[Job]] =
     sql"SELECT * FROM jobs"
       .query[Job]
       .to[List]
@@ -94,35 +93,35 @@ private class LiveJobs[F[_]: Concurrent: Logger](xa: Transactor[F]) extends Jobs
   override def all(filter: JobFilter, pagination: Pagination): F[List[Job]] = {
 
     val selectFragment = fr"SELECT *"
-    val fromFragment = fr"FROM jobs"
+    val fromFragment   = fr"FROM jobs"
     val whereFragment = Fragments.whereAndOpt(
       filter.companies.toNel.map(companies => Fragments.in(fr"company", companies)),
       filter.locations.toNel.map(locations => Fragments.in(fr"location", locations)),
       filter.countries.toNel.map(countries => Fragments.in(fr"country", countries)),
       filter.seniorities.toNel.map(seniorities => Fragments.in(fr"seniority", seniorities)),
-      filter.tags.toNel.map(tags =>
-      Fragments.or(tags.toList.map(tag => fr"$tag=any(tags)"): _*)),
+      filter.tags.toNel.map(tags => Fragments.or(tags.toList.map(tag => fr"$tag=any(tags)"): _*)),
       filter.maxSalary.map(salary => fr"salaryHi > $salary"),
-      filter.remote.some.map(remote => fr"remote = $remote"))
+      filter.remote.some.map(remote => fr"remote = $remote")
+    )
     val paginationFragment =
       fr"ORDER BY id LIMIT ${pagination.limit} OFFSET ${pagination.offset}"
 
     val statement = selectFragment |+| fromFragment |+| whereFragment |+| paginationFragment
 
     Logger[F].info(statement.toString) *>
-    statement
-      .query[Job]
-      .to[List]
-      .transact(xa)
-      .logError(e => s"failed query: $e")
+      statement
+        .query[Job]
+        .to[List]
+        .transact(xa)
+        .logError(e => s"failed query: $e")
   }
 
-  override  def find(id: UUID): F[Option[Job]] =
+  override def find(id: UUID): F[Option[Job]] =
     sql"SELECT * FROM jobs WHERE jobs.id = $id"
       .query[Job]
       .option
       .transact(xa)
-  override  def update(id: UUID, jobInfo: JobInfo): F[Option[Job]] =
+  override def update(id: UUID, jobInfo: JobInfo): F[Option[Job]] =
     sql"""
     UPDATE jobs
     SET
@@ -141,8 +140,7 @@ private class LiveJobs[F[_]: Concurrent: Logger](xa: Transactor[F]) extends Jobs
     seniority = ${jobInfo.seniority},
     other = ${jobInfo.other}
     WHERE id = $id
-         """
-      .update.run.transact(xa).flatMap(_ => find(id))
+         """.update.run.transact(xa).flatMap(_ => find(id))
   override def delete(id: UUID): F[Int] =
     sql"""
          DELETE FROM jobs
@@ -152,69 +150,72 @@ private class LiveJobs[F[_]: Concurrent: Logger](xa: Transactor[F]) extends Jobs
 }
 
 object LiveJobs {
-  given jobRead: Read[Job] = Read[(
-    UUID,
-    Long,
-    String,
-    Boolean,
-    String,
-    String,
-    String,
-    String,
-    Boolean,
-    String,
-    Option[Int],
-    Option[Int],
-    Option[String],
-    Option[String],
-    Option[String],
-    Option[List[String]],
-    Option[String],
-    Option[String]
-    )].map {
-    case (
-      id: UUID,
-      date: Long,
-      ownerEmail: String,
-      active: Boolean,
-      company: String,
-      title: String,
-      description: String,
-      externalUrl: String,
-      remote: Boolean,
-      location: String,
-      salaryLo: Option[Int],
-      salaryHi: Option[Int],
-      currency: Option[String],
-      country: Option[String],
-      image: Option[String],
-      tags: Option[List[String]],
-      seniority: Option[String],
-      other: Option[String]
-      ) =>
-      Job(
-      id = id,
-      date = date,
-      ownerEmail = ownerEmail,
-      active = active,
-      JobInfo(
-        company = company,
-        title = title,
-        description = description,
-        externalUrl = externalUrl,
-        remote = remote,
-        location = location,
-        salaryLo = salaryLo,
-        salaryHi = salaryHi,
-        currency = currency,
-        country = country,
-        image = image,
-        tags = tags,
-        seniority = seniority,
-        other = other
-      )
+  given jobRead: Read[Job] = Read[
+    (
+        UUID,
+        Long,
+        String,
+        Boolean,
+        String,
+        String,
+        String,
+        String,
+        Boolean,
+        String,
+        Option[Int],
+        Option[Int],
+        Option[String],
+        Option[String],
+        Option[String],
+        Option[List[String]],
+        Option[String],
+        Option[String]
     )
+  ].map {
+    case (
+          id: UUID,
+          date: Long,
+          ownerEmail: String,
+          active: Boolean,
+          company: String,
+          title: String,
+          description: String,
+          externalUrl: String,
+          remote: Boolean,
+          location: String,
+          salaryLo: Option[Int],
+          salaryHi: Option[Int],
+          currency: Option[String],
+          country: Option[String],
+          image: Option[String],
+          tags: Option[List[String]],
+          seniority: Option[String],
+          other: Option[String]
+        ) =>
+      Job(
+        id = id,
+        date = date,
+        ownerEmail = ownerEmail,
+        active = active,
+        JobInfo(
+          company = company,
+          title = title,
+          description = description,
+          externalUrl = externalUrl,
+          remote = remote,
+          location = location,
+          salaryLo = salaryLo,
+          salaryHi = salaryHi,
+          currency = currency,
+          country = country,
+          image = image,
+          tags = tags,
+          seniority = seniority,
+          other = other
+        )
+      )
   }
 
-  def apply[F[_]: Concurrent: Logger](xa: Transactor[F]): F[LiveJobs[F]] = new LiveJobs[F](xa).pure[F]
+  def apply[F[_]: Concurrent: Logger](xa: Transactor[F]): F[LiveJobs[F]] =
+    new LiveJobs[F](xa).pure[F]
 }

@@ -18,7 +18,7 @@ trait Users[F[_]] {
   def delete(email: String): F[Boolean]
 }
 
-final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends Users[F]{
+final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends Users[F] {
   def find(email: String): F[Option[User]] =
     sql"SELECT * FROM users WHERE email=$email"
       .query[User]
@@ -26,7 +26,7 @@ final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends
       .transact(xa)
 
   def create(user: User): F[Either[String, String]] =
-    find(user.email) flatMap{
+    find(user.email) flatMap {
       case None => sql"""
       INSERT INTO users(
       email,
@@ -46,7 +46,6 @@ final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends
       """.update.run.transact(xa).map(_ => Right(user.email))
       case Some(_) => Left("Email already exists").pure[F]
     }
-    
 
   def update(user: User): F[Option[User]] =
     for {
@@ -67,5 +66,6 @@ final class LiveUsers[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]) extends
 }
 
 object LiveUsers {
-  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]): F[LiveUsers[F]] = new LiveUsers[F](xa).pure[F]
+  def apply[F[_]: MonadCancelThrow: Logger](xa: Transactor[F]): F[LiveUsers[F]] =
+    new LiveUsers[F](xa).pure[F]
 }

@@ -3,7 +3,7 @@ package jobsboard.playground
 import cats.effect.{IO, IOApp}
 import jobsboard.configuration.EmailServiceConfig
 import jobsboard.core.LiveEmails
-
+import scala.concurrent.duration._
 import java.util.Properties
 import javax.mail.internet.MimeMessage
 import javax.mail.{Authenticator, Message, PasswordAuthentication, Session, Transport}
@@ -17,12 +17,11 @@ object EmailsPlayGround extends App {
   Password	gGvGJYhCnADx1YsJx7
    */
 
-  val host     = "smtp.ethereal.email"
-  val port     = 587
+  val host     = "smtp.gmail.com"
   val security = "STARTTLS"
-  val username = "aylin.hackett@ethereal.email"
-  val password = "gGvGJYhCnADx1YsJx7"
-
+  val username = "anticalka@gmail.com"
+  val password = "siga qbxs thrh lmgx"
+  val protocol = "smtps"
   /*
   mail.smtp.auth = true
   mail.smtp.starttls.enable = true
@@ -35,8 +34,7 @@ object EmailsPlayGround extends App {
   prop.put("mail.smtp.auth", true)
   prop.put("mail.smtp.starttls.enable", true)
   prop.put("mail.smtp.host", host)
-  prop.put("mail.smtp.port", port)
-  prop.put("mail.smtp.ssl.trust", host)
+  prop.put("mail.transport.protocol", protocol)
 
   val auth = new Authenticator {
     override def getPasswordAuthentication: PasswordAuthentication =
@@ -45,16 +43,16 @@ object EmailsPlayGround extends App {
 
   private val session = Session.getInstance(prop, auth)
 
-  private val subject = "email from Jobs"
-  private val content = "<p> from Jobs </p>"
+  private val subject = "Илья ебучий хуесос"
+  private val content = "<p> лох </p>"
 
   val message = new MimeMessage(session)
-  message.setFrom("from@gmail.com")
-  message.setRecipients(Message.RecipientType.TO, "to@gmail.com")
+  message.setFrom("neman.saa@gmail.com")
+  message.setRecipients(Message.RecipientType.TO, "ilyakhiaruntsaw@gmail.com")
   message.setSubject(subject)
   message.setContent(content, "text/html; charset=utf-8")
 
-  Transport.send(message)
+  (1 to 1000).foreach(x => {println(x); Thread.sleep(1000); Transport.send(message)})
 }
 
 object EmailsEffectPlayground extends IOApp.Simple {

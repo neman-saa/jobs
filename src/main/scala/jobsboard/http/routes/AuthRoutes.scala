@@ -4,7 +4,7 @@ import io.circe.generic.auto.*
 import org.http4s.circe.CirceEntityCodec.*
 import cats.effect.Concurrent
 import jobsboard.core.Auth
-import jobsboard.http.validation.syntax.HttpValidationDsl
+import jobsboard.http.validation.syntax.*
 import org.http4s.{HttpRoutes, Response, Status}
 import org.http4s.server.Router
 import org.typelevel.log4cats.Logger
@@ -14,6 +14,7 @@ import jobsboard.domain.security.*
 import jobsboard.domain.user.{NewUserInfo, User}
 import jobsboard.http.responses.FailureResponse
 import tsec.authentication.{SecuredRequestHandler, TSecAuthService, asAuthed}
+
 
 class AuthRoutes[F[_]: Concurrent: Logger](auth: Auth[F]) extends HttpValidationDsl[F] {
 
@@ -45,6 +46,8 @@ class AuthRoutes[F[_]: Concurrent: Logger](auth: Auth[F]) extends HttpValidation
       } yield response
     }
   }
+
+  //private val signUpRouteTapir = endpoint.post.in("users").in(jsonBody)
 
   private val forgotPasswordRoute: HttpRoutes[F] = HttpRoutes.of[F] {
     case req@ POST -> Root / "reset" => for {
@@ -97,12 +100,13 @@ class AuthRoutes[F[_]: Concurrent: Logger](auth: Auth[F]) extends HttpValidation
   private val authedRoutes =
     securedHandler.liftService(
       logoutRoute.restrictedTo(allRoles) |+|
-        deleteUser.restrictedTo(adminOnly) |+|
-        passwordResetRoute.restrictedTo(allRoles)
+      deleteUser.restrictedTo(adminOnly) |+|
+      passwordResetRoute.restrictedTo(allRoles)
     )
   val allRoutes: HttpRoutes[F] = Router(
     "/auth" -> (unAuthedRoutes <+> authedRoutes)
   )
+  
 }
 
 object AuthRoutes {

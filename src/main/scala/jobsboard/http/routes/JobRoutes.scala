@@ -18,6 +18,7 @@ import jobsboard.domain.user.User
 import org.typelevel.log4cats.Logger
 import jobsboard.http.validation.syntax.*
 import jobsboard.domain.security.*
+
 import java.util.UUID
 import scala.collection.mutable
 import jobsboard.logging.syntax.*
@@ -48,11 +49,11 @@ private class JobRoutes[F[_]: Concurrent: Logger](jobs: Jobs[F])(authenticator: 
     }
   }
 
-  private val createJobRoute: AuthRoute[F] = { case req @ POST -> Root / "create" asAuthed _ =>
+  private val createJobRoute: AuthRoute[F] = { case req @ POST -> Root / "create" asAuthed user =>
     req.request.validate[JobInfo] { jobInfo =>
       for {
         _        <- Logger[F].info(s"Parsed job info: $jobInfo")
-        job      <- jobs.create("TODO", jobInfo)
+        job      <- jobs.create(user.email, jobInfo)
         -        <- Logger[F].info(s"Created a job: $job")
         response <- Created(job)
       } yield response
@@ -87,10 +88,10 @@ private class JobRoutes[F[_]: Concurrent: Logger](jobs: Jobs[F])(authenticator: 
       updateJobRoute.restrictedTo(allRoles) |+|
       deleteJobRoute.restrictedTo(allRoles)
   )
-  private val unauthedRoutes: HttpRoutes[F] = allJobsRoute <+> findJobRoute
+  private val unAuthedRoutes: HttpRoutes[F] = allJobsRoute <+> findJobRoute
 
   val allRoutes: HttpRoutes[F] = Router(
-    "/jobs" -> (unauthedRoutes <+> authRoutes)
+    "/jobs" -> (unAuthedRoutes <+> authRoutes)
   )
 }
 

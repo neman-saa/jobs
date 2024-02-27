@@ -14,10 +14,10 @@ trait Emails[F[_]] {
 
 class LiveEmails[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig) extends Emails[F] {
 
-  val host: String = emailServiceConfig.host
-  val port: Int = emailServiceConfig.port
-  val user: String = emailServiceConfig.user
-  val pass: String = emailServiceConfig.pass
+  val host: String        = emailServiceConfig.host
+  val port: Int           = emailServiceConfig.port
+  val user: String        = emailServiceConfig.user
+  val pass: String        = emailServiceConfig.pass
   val frontendUrl: String = emailServiceConfig.frontendUrl
   override def sendPasswordRecoveryEmail(to: String, token: String): F[Unit] = {
     val subject = "Jobs: password recovery"
@@ -39,8 +39,8 @@ class LiveEmails[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig)
   }
   override def sendEmail(to: String, subject: String, content: String): F[Unit] = {
     val messageResource = for {
-      prop <- propResource
-      auth <- authenticationResource
+      prop    <- propResource
+      auth    <- authenticationResource
       session <- createSession(prop, auth)
       message <- createMessage(session)("al@gmail.com", to, subject, content)
     } yield message
@@ -66,7 +66,9 @@ class LiveEmails[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig)
   private def createSession(prop: Properties, auth: Authenticator): Resource[F, Session] =
     Resource.pure(Session.getInstance(prop, auth))
 
-  private def createMessage(session: Session)(from: String, to: String, subject: String, content: String): Resource[F, MimeMessage] = {
+  private def createMessage(
+      session: Session
+  )(from: String, to: String, subject: String, content: String): Resource[F, MimeMessage] = {
     val message = new MimeMessage(session)
     message.setFrom(from)
     message.setRecipients(Message.RecipientType.TO, "the.user@gmail.com")
@@ -79,5 +81,6 @@ class LiveEmails[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig)
 }
 
 object LiveEmails {
-  def apply[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig): F[LiveEmails[F]] = new LiveEmails[F](emailServiceConfig).pure[F]
+  def apply[F[_]: MonadCancelThrow](emailServiceConfig: EmailServiceConfig): F[LiveEmails[F]] =
+    new LiveEmails[F](emailServiceConfig).pure[F]
 }

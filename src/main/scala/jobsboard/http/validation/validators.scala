@@ -94,7 +94,7 @@ object validators {
     ).mapN(JobInfo.apply)
   }
 
-  given loginInfoValidator: Validator[LoginInfo] = (loginInfo: LoginInfo) => {
+  given logivnInfoValidator: Validator[LoginInfo] = (loginInfo: LoginInfo) => {
     val validEmail =
       validateRequired(loginInfo.email, "email")(_.nonEmpty).andThen(e => validateEmail(e, "email"))
     val validPassword = validateRequired(loginInfo.password, "password")(_.nonEmpty)
