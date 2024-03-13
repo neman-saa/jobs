@@ -2,7 +2,7 @@ package jobsboard.configuration
 
 import pureconfig.*
 import pureconfig.generic.derivation.default.*
-case class git comigit EmailServiceConfig(
+case class EmailServiceConfig(
     host: String,
     port: Int,
     user: String,
